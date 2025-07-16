@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>电影搜索系统</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-hover: #66ccff;
+      --secondary: #6b7280;
+      --light: #f9fafb;
+      --dark: #1f2937;
+      --success: #6a8a7f;
+      --warning: #f59e0b;
+      --danger: #eb1b1b;
+      --border-radius: 8px;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --transition: all 0.3s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      line-height: 1.6;
+      color: var(--dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(135deg, #0c3483 0%, #a2b6df 50%, #6b8cce 100%);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* 背景动画 */
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* 添加背景装饰元素 */
+    .bg-decor {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      opacity: 0.1;
+      pointer-events: none;
+    }
+
+    .bg-circle {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+      animation: float 12s infinite linear;
+    }
+
+    .circle-1 {
+      width: 300px;
+      height: 300px;
+      top: 10%;
+      left: 5%;
+      animation-delay: 0s;
+    }
+
+    .circle-2 {
+      width: 200px;
+      height: 200px;
+      top: 60%;
+      left: 15%;
+      animation-delay: 2s;
+    }
+
+    .circle-3 {
+      width: 250px;
+      height: 250px;
+      top: 30%;
+      right: 10%;
+      animation-delay: 4s;
+    }
+
+    .circle-4 {
+      width: 180px;
+      height: 180px;
+      bottom: 20%;
+      right: 20%;
+      animation-delay: 6s;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0); }
+      25% { transform: translate(20px, 20px); }
+      50% { transform: translate(0, 40px); }
+      75% { transform: translate(-20px, 20px); }
+    }
+
+    header {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(10px);
+      padding: 1.5rem 2rem;
+      box-shadow: var(--shadow-sm);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background-color: var(--primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+
+    .logo-text {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: -0.5px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      flex: 1;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 3rem 0;
+      max-width: 700px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: white;
+      line-height: 1.2;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .hero-subtitle {
+      font-size: 1.25rem;
+      color: rgba(255, 255, 255, 0.85);
+      margin-bottom: 2.5rem;
+    }
+
+    .search-form {
+      display: flex;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      box-shadow: var(--shadow);
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      transition: var(--transition);
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .search-form:focus-within {
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5), var(--shadow-md);
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 1rem;
+      border: none;
+      outline: none;
+      font-size: 1rem;
+      background: rgba(255, 255, 255, 0.9);
+      transition: var(--transition);
+    }
+
+    input[type="text"]:focus {
+      background: white;
+    }
+
+    input[type="text"]::placeholder {
+      color: #6b7280;
+    }
+
+    .search-btn {
+      padding: 0 1.75rem;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .search-btn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .search-btn i {
+      font-size: 1.25rem;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .results-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: white;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .results-count {
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 0.9rem;
+    }
+
+    .result-item {
+      background-color: rgba(255, 255, 255, 0.9);
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+      cursor: pointer;
+      border-left: 4px solid transparent;
+    }
+
+    .result-item:hover {
+      box-shadow: var(--shadow);
+      border-left-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .result-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .result-meta {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.875rem;
+      color: var(--secondary);
+      margin-bottom: 1rem;
+    }
+
+    .result-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .result-snippet {
+      color: var(--dark);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .highlight {
+      background-color: #fef08a;
+      padding: 0 0.2rem;
+      border-radius: 0.25rem;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin: 2rem 0;
+    }
+
+    .pagination-btn {
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      border: 1px solid #e5e7eb;
+      background-color: white;
+      color: var(--dark);
+      cursor: pointer;
+      transition: var(--transition);
+      min-width: 40px;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      background-color: #f3f4f6;
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pagination-btn.active {
+      background-color: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .action-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--border-radius);
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: white;
+      color: var(--dark);
+      border: 1px solid #e5e7eb;
+    }
+
+    .btn-secondary:hover {
+      background-color: #f9fafb;
+    }
+
+    .detail-container {
+      background-color: rgba(255, 255, 255, 0.9);
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      box-shadow: var(--shadow);
+    }
+
+    .detail-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--dark);
+    }
+
+    .detail-meta {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .detail-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--secondary);
+      font-size: 0.9rem;
+    }
+
+    .detail-content {
+      line-height: 1.8;
+      color: var(--dark);
+    }
+
+    .detail-content p {
+      margin-bottom: 1.5rem;
+    }
+
+    .detail-actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      background-color: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(10px);
+      color: var(--secondary);
+      font-size: 0.875rem;
+      box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+
+    /* 加载动画 */
+    .loader {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(59, 130, 246, 0.3);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      .hero-title {
+        font-size: 2rem;
+      }
+
+      .hero-subtitle {
+        font-size: 1.1rem;
+      }
+
+      .detail-title {
+        font-size: 1.5rem;
+      }
+
+      .detail-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .pagination {
+        flex-wrap: wrap;
+      }
+      
+      .bg-circle {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 背景装饰元素 -->
+  <div class="bg-decor">
+    <div class="bg-circle circle-1"></div>
+    <div class="bg-circle circle-2"></div>
+    <div class="bg-circle circle-3"></div>
+    <div class="bg-circle circle-4"></div>
+  </div>
+  
+  <div id="app">
+    <!-- 首页 -->
+    <div v-if="page === 'home'">
+      <header>
+        <div class="header-content">
+          <a href="#" class="logo" @click.prevent="page = 'home'">
+            <div class="logo-icon">DB</div>
+            <span class="logo-text">电影检索系统</span>
+          </a>
+        </div>
+      </header>
+
+      <main class="container">
+        <div class="hero">
+          <h1 class="hero-title">探索豆瓣排名前250电影</h1>
+          <p class="hero-subtitle">快速检索豆瓣排名前250电影内容</p>
+          <form @submit.prevent="search" class="search-form">
+            <input type="text" v-model="query" placeholder="输入关键词、标题或作者..." />
+            <button type="submit" class="search-btn">
+              <span v-if="!loading">搜索</span>
+              <span v-else class="loader"></span>
+            </button>
+          </form>
+        </div>
+      </main>
+    </div>
+
+    <!-- 结果列表页 -->
+    <div v-else-if="page === 'results'" class="container">
+      <header>
+        <div class="header-content">
+          <a href="#" class="logo" @click.prevent="page = 'home'">
+            <div class="logo-icon">DB</div>
+            <span class="logo-text">电影检索系统</span>
+          </a>
+        </div>
+      </header>
+
+      <main>
+        <div class="results-header">
+          <h2 class="results-title">搜索结果</h2>
+          <p class="results-count">
+            显示 {{ (currentPage - 1) * 10 + 1 }}-{{ Math.min(currentPage * 10, results.length) }} 条，共 {{ results.length }} 条结果
+          </p>
+        </div>
+
+        <div v-if="results.length === 0" class="detail-container">
+          <p>没有找到匹配的结果，请尝试其他关键词。</p>
+          <div class="action-buttons">
+            <button @click="page = 'home'" class="btn btn-secondary">返回首页</button>
+          </div>
+        </div>
+
+        <div v-for="item in paginatedResults" :key="item.id" class="result-item" @click="viewDetails(item)">
+          <h3 class="result-title">
+            <span v-html="highlightMatches(item.title, query)"></span>
+          </h3>
+          <div class="result-meta">
+            <span class="result-meta-item" v-if="item.author">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              {{ item.author }}
+            </span>
+            <span class="result-meta-item" v-if="item.date">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              {{ item.date }}
+            </span>
+          </div>
+          <p class="result-snippet" v-html="highlightMatches(item.snippet, query)"></p>
+        </div>
+
+        <!-- 分页 -->
+        <div class="pagination" v-if="results.length > 0">
+          <button
+            class="pagination-btn"
+            :disabled="currentPage === 1"
+            @click="goToPage(currentPage - 1)"
+          >
+            上一页
+          </button>
+          <button
+            v-for="n in visiblePages"
+            :key="n"
+            class="pagination-btn"
+            :class="{ active: n === currentPage }"
+            @click="goToPage(n)"
+          >
+            {{ n }}
+          </button>
+          <button
+            class="pagination-btn"
+            :disabled="currentPage === totalPages"
+            @click="goToPage(currentPage + 1)"
+          >
+            下一页
+          </button>
+        </div>
+
+        <div class="action-buttons" v-if="results.length > 0">
+          <button @click="page = 'home'" class="btn btn-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            返回首页
+          </button>
+        </div>
+      </main>
+    </div>
+
+    <!-- 详情页 -->
+    <div v-else-if="page === 'details'" class="container">
+      <header>
+        <div class="header-content">
+          <a href="#" class="logo" @click.prevent="page = 'home'">
+            <div class="logo-icon">DB</div>
+            <span class="logo-text">电影知识检索系统</span>
+          </a>
+        </div>
+      </header>
+
+      <main>
+        <div class="detail-container">
+          <h2 class="detail-title">{{ selected.title }}</h2>
+          <div class="detail-meta">
+            <span class="detail-meta-item" v-if="selected.author">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              {{ selected.author }}
+            </span>
+            <span class="detail-meta-item" v-if="selected.date">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              {{ selected.date }}
+            </span>
+            <span class="detail-meta-item" v-if="selected.type">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              {{ selected.type }}
+            </span>
+          </div>
+          <div class="detail-content" v-html="highlightMatches(selected.content, query)"></div>
+
+          <div class="detail-actions">
+            <button @click="page = 'results'" class="btn btn-secondary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+              返回列表
+            </button>
+            <button @click="page = 'home'" class="btn btn-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+              新的搜索
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <footer>
+    <p>电影检索系统 © 2025 四川外国语大学 | 版本 1.0.0</p>
+  </footer>
+
+  <script>
+    const { createApp, ref, computed } = Vue;
+
+    createApp({
+      setup() {
+        const page = ref('home');
+        const query = ref('');
+        const results = ref([]);
+        const selected = ref(null);
+        const currentPage = ref(1);
+        const loading = ref(false);
+        const maxVisiblePages = 5; // 最多显示的分页按钮数量
+
+        // 获取当前页数据
+        const paginatedResults = computed(() => {
+          const start = (currentPage.value - 1) * 10;
+          const end = start + 10;
+          return results.value.slice(start, end);
+        });
+
+        const totalPages = computed(() => Math.ceil(results.value.length / 10));
+
+        // 计算可见的分页按钮
+        const visiblePages = computed(() => {
+          const pages = [];
+          let start = Math.max(1, currentPage.value - Math.floor(maxVisiblePages / 2));
+          let end = Math.min(totalPages.value, start + maxVisiblePages - 1);
+
+          if (end - start + 1 < maxVisiblePages) {
+            start = Math.max(1, end - maxVisiblePages + 1);
+          }
+
+          for (let i = start; i <= end; i++) {
+            pages.push(i);
+          }
+
+          return pages;
+        });
+
+        // 高亮匹配的关键词
+        const highlightMatches = (text, searchTerm) => {
+          if (!searchTerm || !text) return text;
+          const terms = searchTerm.split(' ').filter(term => term.length > 0);
+          let highlighted = text;
+          terms.forEach(term => {
+            const regex = new RegExp(term, 'gi');
+            highlighted = highlighted.replace(regex, match => `<span class="highlight">${match}</span>`);
+          });
+          return highlighted;
+        };
+
+        // 搜索
+        const search = async () => {
+          if (!query.value.trim()) return;
+          loading.value = true;
+          try {
+            const res = await fetch('http://localhost:5000/api/search', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ query: query.value, page: currentPage.value })
+            });
+            const data = await res.json();
+
+            results.value = data.results || [];
+            currentPage.value = data.current_page || 1;
+            page.value = 'results';
+          } catch (err) {
+            alert('请求失败，请检查后端是否运行');
+            console.error(err);
+          } finally {
+            loading.value = false;
+          }
+        };
+
+        // 分页
+        const goToPage = (newPage) => {
+          if (newPage >= 1 && newPage <= totalPages.value) {
+            currentPage.value = newPage;
+            search();
+          }
+        };
+
+        // 查看详情
+        const viewDetails = async (item) => {
+          loading.value = true;
+          try {
+            const res = await fetch(`http://localhost:5000/api/document/${item.id}`);
+            const data = await res.json();
+            selected.value = data;
+            page.value = 'details';
+          } catch (err) {
+            alert('加载详情失败');
+            console.error(err);
+          } finally {
+            loading.value = false;
+          }
+        };
+
+        return {
+          page,
+          query,
+          results,
+          currentPage,
+          paginatedResults,
+          totalPages,
+          visiblePages,
+          selected,
+          loading,
+          search,
+          goToPage,
+          viewDetails,
+          highlightMatches
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
